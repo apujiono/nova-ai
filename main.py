@@ -38,7 +38,7 @@ def ask_nova(query: Query):
 
     try:
         headers = {
-            "Authorization": f"Bearer {os.getenv('DEEPSEEK_API_KEY')}",
+            "Authorization": f"Bearer {os.getenv('sk-f0d23eb257be4732807676997a82c6bb')}",
             "Content-Type": "application/json"
         }
         payload = {
