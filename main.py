@@ -2,30 +2,32 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import os
 import requests
+from dotenv import load_dotenv
 
-app = FastAPI(title="NOVA AI", version="0.1")
+# Hanya untuk lokal, di Railway nggak perlu
+load_dotenv()
+
+app = FastAPI(title="NOVA AI - Personal Assistant", version="0.1")
 
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
-API_KEY = os.getenv("DEEPSEEK_API_KEY")  # Harus di-set di Railway
+API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 class Query(BaseModel):
     message: str
-    history: list = []
+    history: list = []  # format: [{"role": "user"|"assistant", "content": "..." }]
 
 @app.post("/ask")
 def ask_nova(query: Query):
-    if not API_KEY:
-        return {"error": "API key not set"}
-
     headers = {
         "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "1application/json"
+        "Content-Type": "application/json"
     }
 
+    # Gabungkan riwayat + pesan terbaru
     messages = query.history + [{"role": "user", "content": query.message}]
 
     payload = {
-        "model": "deepseek-chat",
+        "model": "deepseek-chat",  # model utama mereka
         "messages": messages,
         "temperature": 0.7,
         "max_tokens": 1024
@@ -38,11 +40,12 @@ def ask_nova(query: Query):
         reply = result["choices"][0]["message"]["content"]
         return {"response": reply}
     except Exception as e:
-        return {"error": str(e), "response": "NOVA sedang offline."}
+        return {"error": str(e), "response": "Maaf, NOVA sedang error."}
 
+# Health check
 @app.get("/")
 def home():
-    return {"status": "NOVA siap membantu!", "api_key_set": API_KEY is not None}
+    return {"status": "NOVA AI siap melayani!"}
     
 #Hanya jalankan server jika di lokal
 if __name__ == "__main__":
