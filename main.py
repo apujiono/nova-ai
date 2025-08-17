@@ -43,3 +43,7 @@ def ask_nova(query: Query):
 @app.get("/")
 def home():
     return {"status": "NOVA siap membantu!", "api_key_set": API_KEY is not None}
+    
+@app.get("/")
+def home():
+    return {"status": "OK", "message": "NOVA AI is alive!"}
