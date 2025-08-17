@@ -1,28 +1,48 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+import os
+import requests
 
-app = FastAPI()
+app = FastAPI(title="NOVA AI", version="0.1")
+
+DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+API_KEY = os.getenv("DEEPSEEK_API_KEY")  # Harus di-set di Railway
+
+class Query(BaseModel):
+    message: str
+    history: list = []
+
+@app.post("/ask")
+def ask_nova(query: Query):
+    if not API_KEY:
+        return {"error": "API key not set"}
+
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "1application/json"
+    }
+
+    messages = query.history + [{"role": "user", "content": query.message}]
+
+    payload = {
+        "model": "deepseek-chat",
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": 1024
+    }
+
+    try:
+        response = requests.post(DEEPSEEK_API_URL, json=payload, headers=headers)
+        response.raise_for_status()
+        result = response.json()
+        reply = result["choices"][0]["message"]["content"]
+        return {"response": reply}
+    except Exception as e:
+        return {"error": str(e), "response": "NOVA sedang offline."}
 
 @app.get("/")
 def home():
-    return {"status": "OK", "message": "NOVA hidup!"}
-
-conversation_history = []
-@app.post("/ask")
-def ask():
-    return {"response": "Halo, aku NOVA!"}
-def ask_nova(query: Query):
-    global conversation_history
-
-    # Simpan input user
-    conversation_history.append({"role": "user", "content": query.message})
-
-    try:
-        response = get_ai_response(query.message, conversation_history)
-        # Simpan jawaban AI
-        conversation_history.append({"role": "assistant", "content": response})
-        return {"response": response}
-    except Exception as e:
-        return {"error": str(e)
+    return {"status": "NOVA siap membantu!", "api_key_set": API_KEY is not None}
     
 #Hanya jalankan server jika di lokal
 if __name__ == "__main__":
